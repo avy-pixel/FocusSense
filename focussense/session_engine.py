@@ -33,7 +33,7 @@ class SessionEngine:
 
     @property
     def remaining_seconds(self):
-        if self.status == "paused":
+        if self.status in ("paused", "awaiting_restart"):
             return max(0, self._paused_remaining or 0)
         if self.status == "running":
             return max(0, self._deadline - self.clock())
@@ -80,7 +80,25 @@ class SessionEngine:
         self._paused_remaining = None
         self.status = "running"
         return self.snapshot()
+    def reset_current_focus_interval(self):
+        """Reset only the current focus interval and wait for Start."""
+        if self.phase != "focus" or self.status not in ("running", "paused"):
+            raise RuntimeError("Only an active focus interval can be reset.")
 
+        self.status = "awaiting_restart"
+        self._deadline = None
+        self._paused_remaining = self.focus_seconds
+        return self.snapshot()
+
+    def start_current_interval(self):
+        """Restart a reset focus interval when the user presses Start."""
+        if self.status != "awaiting_restart":
+            raise RuntimeError("No reset interval is waiting to restart.")
+
+        self._deadline = self.clock() + self._paused_remaining
+        self._paused_remaining = None
+        self.status = "running"
+        return self.snapshot()
     def early_exit(self):
         if self.status not in ("running", "paused"):
             raise RuntimeError("There is no active session to exit.")

@@ -1,0 +1,474 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusSense | Focus Room</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #101522;
+            color: #f5f7ff;
+        }
+
+        header {
+            padding: 22px 7%;
+            border-bottom: 1px solid #293146;
+        }
+
+        header h1 {
+            margin: 0;
+            color: #91f2c3;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 6px 0 0;
+            color: #aab3c7;
+        }
+
+        main {
+            width: min(1100px, 92%);
+            margin: 35px auto;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
+        .card {
+            padding: 25px;
+            border: 1px solid #30394e;
+            border-radius: 18px;
+            background: #191f30;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        label {
+            display: block;
+            margin: 16px 0 7px;
+            color: #c4cce0;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #39435a;
+            border-radius: 9px;
+            background: #101522;
+            color: white;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 17px;
+            margin: 12px 7px 0 0;
+            border: 0;
+            border-radius: 9px;
+            background: #91f2c3;
+            color: #101522;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: #30394e;
+            color: white;
+        }
+
+        button.danger {
+            background: #f28c8c;
+            color: #251010;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .timer {
+            margin: 20px 0;
+            font-size: clamp(48px, 8vw, 70px);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .phase {
+            color: #91f2c3;
+            text-align: center;
+            font-size: 18px;
+            text-transform: capitalize;
+        }
+
+        .details {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 20px 0;
+            color: #c4cce0;
+        }
+
+        .camera {
+            width: 100%;
+            min-height: 200px;
+            margin-top: 15px;
+            border-radius: 12px;
+            background: #101522;
+            object-fit: cover;
+        }
+
+        .camera-placeholder {
+            display: grid;
+            min-height: 200px;
+            margin-top: 15px;
+            place-items: center;
+            border: 1px dashed #39435a;
+            border-radius: 12px;
+            color: #aab3c7;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .message {
+            min-height: 48px;
+            margin-top: 18px;
+            padding: 13px;
+            border-radius: 9px;
+            background: #252d41;
+            color: #dce4f7;
+            line-height: 1.5;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .stat {
+            padding: 15px;
+            border-radius: 10px;
+            background: #252d41;
+        }
+
+        .stat strong {
+            display: block;
+            margin-top: 7px;
+            font-size: 24px;
+            color: #91f2c3;
+        }
+
+        .note {
+            margin-top: 25px;
+            color: #aab3c7;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 720px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            main {
+                margin-top: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>FocusSense</h1>
+    <p>Your focus. Your time. Your progress.</p>
+</header>
+
+<main>
+    <div class="layout">
+        <section class="card">
+            <h2>Configure your session</h2>
+
+            <form id="start-form">
+                <label for="focus">Focus duration (minutes)</label>
+                <input id="focus" type="number"
+                       min="1" max="180" value="25" required>
+
+                <label for="break">Break duration (minutes)</label>
+                <input id="break" type="number"
+                       min="1" max="60" value="5" required>
+
+                <label for="cycles">Number of focus cycles</label>
+                <input id="cycles" type="number"
+                       min="1" max="12" value="4" required>
+
+                <button type="submit" id="start-button">
+                    Start Focus Session
+                </button>
+            </form>
+
+            <div id="camera-placeholder" class="camera-placeholder">
+                Your camera preview will appear when a session starts.
+            </div>
+
+            <img id="camera-feed" class="camera" src=""
+                 alt="Live webcam preview" hidden>
+
+            <div id="message" class="message" role="status">
+                Choose your settings and start focusing.
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Your Focus Room</h2>
+
+            <div id="phase" class="phase">Ready</div>
+            <div id="timer" class="timer">25:00</div>
+
+            <div class="details">
+                <span>Cycle</span>
+                <strong id="cycle">0 / 4</strong>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    Completed focus intervals
+                    <strong id="completed">0</strong>
+                </div>
+
+                <div class="stat">
+                    Face-absence violations
+                    <strong id="violations">0</strong>
+                </div>
+            </div>
+
+            <div>
+                <button id="pause-button" class="secondary" hidden>
+                    Pause
+                </button>
+
+                <button id="resume-button" hidden>
+                    Resume
+                </button>
+
+                <button id="restart-button" hidden>
+                    Restart Focus Interval
+                </button>
+
+                <button id="exit-button" class="danger" hidden>
+                    End Session
+                </button>
+            </div>
+
+            <p class="note">
+                FocusSense checks whether your face is visible to the
+                webcam. If your face is absent for five continuous seconds,
+                the first violation pauses the timer. A second violation
+                resets the current focus interval. Breaks do not require
+                face detection.
+            </p>
+        </section>
+    </div>
+</main>
+
+<script>
+    const startForm = document.getElementById("start-form");
+    const startButton = document.getElementById("start-button");
+    const pauseButton = document.getElementById("pause-button");
+    const resumeButton = document.getElementById("resume-button");
+    const restartButton = document.getElementById("restart-button");
+    const exitButton = document.getElementById("exit-button");
+
+    const timerElement = document.getElementById("timer");
+    const phaseElement = document.getElementById("phase");
+    const cycleElement = document.getElementById("cycle");
+    const completedElement = document.getElementById("completed");
+    const violationsElement = document.getElementById("violations");
+    const messageElement = document.getElementById("message");
+
+    const cameraFeed = document.getElementById("camera-feed");
+    const cameraPlaceholder = document.getElementById("camera-placeholder");
+
+    let sessionStarted = false;
+    let latestState = null;
+    let polling = false;
+
+    function formatTime(totalSeconds) {
+        const seconds = Math.max(0, totalSeconds);
+        const minutes = Math.floor(seconds / 60);
+        const remainder = seconds % 60;
+
+        return String(minutes).padStart(2, "0") + ":" +
+               String(remainder).padStart(2, "0");
+    }
+
+    async function sendAction(action) {
+        const response = await fetch("/api/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Action failed.");
+        }
+
+        renderState(data);
+    }
+
+    async function refreshState() {
+        if (polling) return;
+        polling = true;
+
+        try {
+            const response = await fetch("/api/state");
+            const state = await response.json();
+            renderState(state);
+        } catch (error) {
+            messageElement.textContent = "Could not contact the server.";
+        } finally {
+            polling = false;
+        }
+    }
+
+    function renderState(state) {
+        latestState = state;
+
+        timerElement.textContent = formatTime(state.remaining_seconds);
+        phaseElement.textContent =
+            state.phase ? state.phase.replace("_", " ") : "Ready";
+
+        cycleElement.textContent =
+            `${state.current_cycle} / ${state.planned_cycles}`;
+
+        completedElement.textContent = state.completed_focus_intervals;
+        violationsElement.textContent = state.violation_count;
+        messageElement.textContent =
+            state.camera_error || state.message;
+
+        const active = ["running", "paused"].includes(state.status);
+
+        pauseButton.hidden = state.status !== "running";
+
+        resumeButton.hidden = !(
+           state.status === "paused" &&
+           !state.warning_pause &&
+           !state.camera_error
+        );
+
+        restartButton.hidden = state.status !== "awaiting_restart";
+        exitButton.hidden = !active;
+
+        startButton.disabled = active || state.status === "awaiting_restart";
+
+        if (sessionStarted && !state.camera_error &&
+            !["idle", "incomplete", "completed"].includes(state.status)) {
+            cameraPlaceholder.hidden = true;
+            cameraFeed.hidden = false;
+        } else {
+            cameraFeed.hidden = true;
+            cameraPlaceholder.hidden = false;
+
+            if (state.camera_error) {
+                cameraPlaceholder.textContent = state.camera_error;
+            } else if (state.status === "completed") {
+                cameraPlaceholder.textContent = "Session completed!";
+            } else if (state.status === "incomplete") {
+                cameraPlaceholder.textContent = "Session ended.";
+            }
+        }
+
+        if (state.status === "completed") {
+            messageElement.textContent =
+                "Great work! You completed all planned focus intervals.";
+            startButton.disabled = false;
+        }
+    }
+
+    startForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        startButton.disabled = true;
+        messageElement.textContent = "Checking camera and starting session...";
+
+        try {
+            const response = await fetch("/api/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    focus_minutes: Number(document.getElementById("focus").value),
+                    break_minutes: Number(document.getElementById("break").value),
+                    cycles: Number(document.getElementById("cycles").value)
+                })
+            });
+
+            const state = await response.json();
+
+            if (!response.ok) {
+                throw new Error(state.error || "Could not start session.");
+            }
+
+            sessionStarted = true;
+            cameraFeed.src = "/video_feed?time=" + Date.now();
+            renderState(state);
+        } catch (error) {
+            messageElement.textContent = error.message;
+            startButton.disabled = false;
+        }
+    });
+
+    pauseButton.addEventListener("click", async () => {
+        try {
+            await sendAction("pause");
+        } catch (error) {
+            messageElement.textContent = error.message;
+        }
+    });
+
+    resumeButton.addEventListener("click", async () => {
+        try {
+            await sendAction("resume");
+        } catch (error) {
+            messageElement.textContent = error.message;
+        }
+    });
+
+    restartButton.addEventListener("click", async () => {
+        try {
+            await sendAction("start_after_reset");
+        } catch (error) {
+            messageElement.textContent = error.message;
+        }
+    });
+
+    exitButton.addEventListener("click", async () => {
+        try {
+            await sendAction("exit");
+            sessionStarted = false;
+            cameraFeed.src = "";
+        } catch (error) {
+            messageElement.textContent = error.message;
+        }
+    });
+
+    refreshState();
+    setInterval(refreshState, 1000);
+</script>
+</body>
+</html>

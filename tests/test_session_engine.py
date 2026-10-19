@@ -103,7 +103,42 @@ class TestSessionEngine(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             SessionEngine(break_minutes=-1)
+    def test_reset_preserves_completed_intervals(self):
+        self.engine.start(cycles=2)
 
+        # Complete the first focus interval.
+        self.clock.advance(60)
+        self.engine.tick()
+
+        # Finish the break and enter the second focus interval.
+        self.clock.advance(120)
+        self.engine.tick()
+
+        # Spend 30 seconds in the second focus interval.
+        self.clock.advance(30)
+        self.engine.reset_current_focus_interval()
+
+        state = self.engine.snapshot()
+
+        self.assertEqual(state["status"], "awaiting_restart")
+        self.assertEqual(state["phase"], "focus")
+        self.assertEqual(state["completed_focus_intervals"], 1)
+        self.assertEqual(state["remaining_seconds"], 60)
+
+    def test_reset_waits_for_manual_restart(self):
+        self.engine.start(cycles=2)
+        self.clock.advance(20)
+        self.engine.reset_current_focus_interval()
+
+        self.clock.advance(100)
+        self.assertEqual(self.engine.remaining_seconds, 60)
+
+        self.engine.start_current_interval()
+        self.clock.advance(60)
+        state = self.engine.tick()
+
+        self.assertEqual(state["phase"], "break")
+        self.assertEqual(state["completed_focus_intervals"], 1)
 
 if __name__ == "__main__":
     unittest.main()
